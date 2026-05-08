@@ -1,3 +1,10 @@
+## [1.0.0-beta.2](https://github.com/equa/equa-base/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2026-05-08)
+
+### Bug Fixes
+
+* build and test image locally before push; tag with semver ([35a8809](https://github.com/equa/equa-base/commit/35a8809d2900ca3296ddd1c802acacda9817e178))
+* disable MD041 for CHANGELOG.md (semantic-release omits h1) ([b812184](https://github.com/equa/equa-base/commit/b8121840391425a42b592cfab2b9707b7ea037cd))
+
 ## 1.0.0-beta.1 (2026-05-08)
 
 ### Features
