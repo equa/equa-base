@@ -60,8 +60,8 @@ cat > "$TMPDIR/hello.cpp" << 'EOF'
 #include <iostream>
 int main() { std::cout << "Hello from C++\n"; return 0; }
 EOF
-icx -o "$TMPDIR/hello_cpp" "$TMPDIR/hello.cpp"
-run_check "icx++ compile+run" "$TMPDIR/hello_cpp"
+icpx -o "$TMPDIR/hello_cpp" "$TMPDIR/hello.cpp"
+run_check "icpx compile+run" "$TMPDIR/hello_cpp"
 
 # Fortran — ifx
 cat > "$TMPDIR/hello.f90" << 'EOF'
