@@ -22,12 +22,7 @@ run_check() {
     fi
 }
 
-# Source oneAPI environment if available (APT install path)
-if [ -f /opt/intel/oneapi/setvars.sh ]; then
-    # shellcheck disable=SC1091
-    . /opt/intel/oneapi/setvars.sh --force 2>/dev/null || true
-fi
-# Also set common paths used by CI jobs
+# Set oneAPI paths directly (APT install; avoids setvars.sh calling exit)
 export PATH="/opt/intel/oneapi/compiler/latest/bin:${PATH}"
 export LD_LIBRARY_PATH="/opt/intel/oneapi/compiler/latest/lib:${LD_LIBRARY_PATH:-}"
 
