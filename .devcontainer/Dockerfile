@@ -64,7 +64,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
 # lychee is a Rust binary (no npm package) - install from GitHub releases
 RUN npm install -g markdownlint-cli2 cspell \
     && LYCHEE_VERSION="0.18.0" \
-    && curl -sL "https://github.com/lycheeverse/lychee/releases/download/lychee-v${LYCHEE_VERSION}/lychee-v${LYCHEE_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
+    && curl -sL "https://github.com/lycheeverse/lychee/releases/download/lychee-v${LYCHEE_VERSION}/lychee-x86_64-unknown-linux-gnu.tar.gz" \
       | tar xz -C /usr/local/bin/ lychee \
     && lychee --version
 
