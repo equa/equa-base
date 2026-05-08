@@ -1,0 +1,20 @@
+{
+  "private": true,
+  "scripts": {
+    "lint:md": "markdownlint-cli2 \"**/*.md\" --ignore node_modules",
+    "lint:spell": "cspell --no-progress \"**/*.md\" --exclude node_modules",
+    "lint": "npm run lint:md && npm run lint:spell",
+    "release": "semantic-release"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "@semantic-release/changelog": "^6.0.0",
+    "@semantic-release/git": "^10.0.0",
+    "@semantic-release/github": "^12.0.6",
+    "conventional-changelog-conventionalcommits": "^9.0.0",
+    "cspell": "^8.0.0",
+    "markdownlint-cli2": "^0.22.0",
+    "semantic-release": "^25.0.3"
+  }
+}

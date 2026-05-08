@@ -1,0 +1,53 @@
+name: Publish Wiki
+description: >
+  Push a module docs subtree to the Azure DevOps wiki repository.
+  Verbatim copy of equa-superlu/.github/actions/publish-wiki/action.yml;
+  behaviour is unchanged — the scope input selects the subdirectory to publish.
+
+inputs:
+  release-tag:
+    description: "Semver release tag (e.g. v1.0.0-beta.1)"
+    required: false
+    default: ""
+  release-notes:
+    description: "Release notes Markdown"
+    required: false
+    default: ""
+  wiki-branch:
+    description: "Target branch in the Azure DevOps wiki repository"
+    required: false
+    default: "main"
+  scope:
+    description: "Docs subdirectory to publish (e.g. docs/platform/modules/superlu)"
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@v8.1.0
+
+    - name: Install Python dependencies
+      shell: bash
+      run: uv sync
+
+    - name: Publish wiki
+      shell: bash
+      env:
+        AZURE_DEVOPS_TOKEN: ${{ env.AZURE_DEVOPS_TOKEN }}
+        RELEASE_TAG: ${{ inputs.release-tag }}
+        RELEASE_NOTES: ${{ inputs.release-notes }}
+        WIKI_BRANCH: ${{ inputs.wiki-branch }}
+        SCOPE: ${{ inputs.scope }}
+      run: |
+        SCOPE_ARG=""
+        if [ -n "$SCOPE" ]; then
+          SCOPE_ARG="--scope $SCOPE"
+        fi
+        # shellcheck disable=SC2086
+        uv run python -m equa.ci.publish_wiki --push \
+          $SCOPE_ARG \
+          --release-tag "$RELEASE_TAG" \
+          --release-notes "$RELEASE_NOTES" \
+          --wiki-branch "$WIKI_BRANCH"

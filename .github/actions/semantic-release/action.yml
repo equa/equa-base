@@ -1,0 +1,25 @@
+name: Semantic Release
+description: Run semantic-release with standard token wiring (npm ci + npx semantic-release).
+
+inputs:
+  github-token:
+    description: "GitHub token with write access to contents, issues, and pull-requests"
+    required: true
+  azure-devops-token:
+    description: "Azure DevOps PAT (forwarded as AZURE_DEVOPS_TOKEN)"
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install Node dependencies
+      shell: bash
+      run: npm ci
+
+    - name: Run semantic-release
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        AZURE_DEVOPS_TOKEN: ${{ inputs.azure-devops-token }}
+      run: npx semantic-release

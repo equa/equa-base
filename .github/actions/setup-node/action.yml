@@ -1,0 +1,17 @@
+name: Setup Node.js
+description: Set up Node.js 24 with npm cache using actions/setup-node.
+
+inputs:
+  node-version:
+    description: "Node.js version"
+    required: false
+    default: "24"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm

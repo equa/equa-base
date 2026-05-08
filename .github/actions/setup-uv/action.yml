@@ -1,0 +1,16 @@
+name: Setup uv
+description: Install uv using the official astral-sh/setup-uv action.
+
+inputs:
+  version:
+    description: "uv version to install (default: latest)"
+    required: false
+    default: "latest"
+
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@v8.1.0
+      with:
+        version: ${{ inputs.version }}

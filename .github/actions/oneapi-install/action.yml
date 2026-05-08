@@ -1,0 +1,54 @@
+name: Install Intel oneAPI
+description: >
+  Install the Intel oneAPI C/Fortran compiler toolkit using the offline
+  installer scripts from equa-base/scripts/. Pre-configures the component
+  environment variables that match the equa-superlu release workflow.
+
+inputs:
+  os:
+    description: "Target OS: linux or windows"
+    required: false
+    default: "linux"
+  linux-toolkit-url:
+    description: "URL of the Linux offline installer .sh"
+    required: false
+    default: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/71180075-e4e3-4c6f-bbbb-19017ed0cf7d/intel-oneapi-toolkit-2026.0.0.198_offline.sh"
+  linux-cpp-components:
+    description: "Linux C/C++ component ID"
+    required: false
+    default: "intel.oneapi.lin.dpcpp-cpp-compiler"
+  linux-fortran-components:
+    description: "Linux Fortran component ID"
+    required: false
+    default: "intel.oneapi.lin.ifort-compiler"
+  windows-toolkit-url:
+    description: "URL of the Windows offline installer .exe"
+    required: false
+    default: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/bae85ab1-cfcd-4251-8d42-a0c27949ea33/intel-oneapi-toolkit-2026.0.0.193_offline.exe"
+  windows-cpp-components:
+    description: "Windows C/C++ component ID"
+    required: false
+    default: "intel.oneapi.win.cpp-dpcpp-common"
+  windows-fortran-components:
+    description: "Windows Fortran component ID"
+    required: false
+    default: "intel.oneapi.win.ifort-compiler"
+
+runs:
+  using: composite
+  steps:
+    - name: Install oneAPI (Linux)
+      if: inputs.os == 'linux'
+      shell: bash
+      run: |
+        "${{ github.action_path }}/../../../scripts/install_linux.sh" \
+          "${{ inputs.linux-toolkit-url }}" \
+          "${{ inputs.linux-cpp-components }}:${{ inputs.linux-fortran-components }}"
+
+    - name: Install oneAPI (Windows)
+      if: inputs.os == 'windows'
+      shell: bash
+      run: |
+        "${{ github.action_path }}/../../../scripts/install_windows.bat" \
+          "${{ inputs.windows-toolkit-url }}" \
+          "${{ inputs.windows-cpp-components }}:${{ inputs.windows-fortran-components }}"
