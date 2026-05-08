@@ -1,8 +1,8 @@
 {
   "private": true,
   "scripts": {
-    "lint:md": "markdownlint-cli2 \"**/*.md\" --ignore node_modules",
-    "lint:spell": "cspell --no-progress \"**/*.md\" --exclude node_modules",
+    "lint:md": "markdownlint-cli2 \"*.md\"",
+    "lint:spell": "cspell --no-progress \"*.md\"",
     "lint": "npm run lint:md && npm run lint:spell",
     "release": "semantic-release"
   },

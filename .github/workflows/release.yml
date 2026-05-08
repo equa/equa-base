@@ -31,10 +31,10 @@ jobs:
         run: npm ci
 
       - name: Markdown lint
-        run: npx markdownlint-cli2 "**/*.md" --ignore node_modules
+        run: npx markdownlint-cli2 "*.md"
 
       - name: Spell check
-        run: npx cspell --no-progress "**/*.md" --exclude node_modules
+        run: npx cspell --no-progress "*.md"
 
   # ── Build and push image ──────────────────────────────────────────────────
   build_image:
