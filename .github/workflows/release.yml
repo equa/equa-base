@@ -73,7 +73,7 @@ jobs:
             bash /tmp/run-all.sh
 
       - name: Run Trivy vulnerability scan
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ghcr.io/equa/equa-base:beta-${{ github.sha }}
           format: cyclonedx
