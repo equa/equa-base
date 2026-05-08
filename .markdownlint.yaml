@@ -14,8 +14,9 @@ MD013:
 MD033:
   allowed_elements: ["a"]
 
-# MD041 — First line should be top-level heading (enforced as-is)
-MD041: true
+# MD041 — First line should be top-level heading: disabled for CHANGELOG.md
+# (semantic-release generates changelogs that start with a ## section heading)
+MD041: false
 
 # MD060 — Table column style: disabled. The rule (added in
 # markdownlint-cli2 0.22) infers table style from the separator row
