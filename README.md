@@ -57,7 +57,7 @@ All work happens on the `beta` branch. `main` is not used during the current rol
 Commits follow [Conventional Commits](https://www.conventionalcommits.org/). Releases are produced by `semantic-release` on each push to `beta`.
 
 ```bash
-cd /home/iakovn/repos/equa-base
+cd /path/to/equa-base
 git checkout beta
 # … make changes …
 git commit -m "feat: description"

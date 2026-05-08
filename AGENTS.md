@@ -47,7 +47,7 @@ use `feat:`, `fix:`, or `docs:`. Pure maintenance commits (`chore:`, `ci:`,
 
 1. Edit `.devcontainer/Dockerfile` — add the install step.
 2. Add a version check and hello-world test in `tests/toolchain/run-all.sh`.
-3. Commit with `feat: add <toolname> to base image`.
+3. Commit with `feat: add <tool> to base image`.
 4. Push to `beta`; CI builds and smoke-tests the image automatically.
 
 ## Composite actions
