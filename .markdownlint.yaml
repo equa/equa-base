@@ -1,0 +1,24 @@
+# markdownlint configuration for docs/ content
+# https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+default: true
+
+# MD013 — Line length: relax for tables, code blocks and headings
+MD013:
+  line_length: 200
+  tables: false
+  code_blocks: false
+  headings: false
+
+# MD033 — Inline HTML: allow <a> anchor tags used for cross-references
+# per the repo anchor convention documented in AGENTS.md
+MD033:
+  allowed_elements: ["a"]
+
+# MD041 — First line should be top-level heading (enforced as-is)
+MD041: true
+
+# MD060 — Table column style: disabled. The rule (added in
+# markdownlint-cli2 0.22) infers table style from the separator row
+# and then complains about every padded data row. The repo
+# convention is padded tables; disabling the rule keeps that.
+MD060: false
