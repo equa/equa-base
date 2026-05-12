@@ -1,3 +1,10 @@
+## [1.0.0-beta.3](https://github.com/equa/equa-base/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2026-05-12)
+
+### Bug Fixes
+
+* allow sibling-only duplicate headings (CHANGELOG sections) ([f70e964](https://github.com/equa/equa-base/commit/f70e96477324b34b3f3f0860be147ddefcbffc54))
+* bump trivy-action to v0.36.0 in release workflow ([c6acba0](https://github.com/equa/equa-base/commit/c6acba0f2477077073ac82be0f0281a5d10a573e))
+
 ## [1.0.0-beta.2](https://github.com/equa/equa-base/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2026-05-08)
 
 ### Bug Fixes
