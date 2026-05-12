@@ -18,6 +18,13 @@ MD033:
 # (semantic-release generates changelogs that start with a ## section heading)
 MD041: false
 
+# MD024 — Multiple headings with the same content: allow when not siblings.
+# semantic-release generates repeated section headings (e.g. "Bug Fixes")
+# in successive release entries; siblings_only flags only true duplicates
+# within the same parent heading.
+MD024:
+  siblings_only: true
+
 # MD060 — Table column style: disabled. The rule (added in
 # markdownlint-cli2 0.22) infers table style from the separator row
 # and then complains about every padded data row. The repo
