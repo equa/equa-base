@@ -24,6 +24,11 @@ Content changes that should appear in the CHANGELOG and trigger a release must
 use `feat:`, `fix:`, or `docs:`. Pure maintenance commits (`chore:`, `ci:`,
 `style:`) do not trigger a release.
 
+### Agent-specific rules
+
+- The very first commit of a session (initial plan / scaffolding) **must** use
+  `chore:` or `docs:` — never a bare prose subject like `"Initial plan"`.
+
 ## Workflow
 
 - Trunk-based development. `beta` is the pre-release channel.
