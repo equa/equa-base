@@ -1,3 +1,9 @@
+## [1.0.0-beta.4](https://github.com/equa/equa-base/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2026-05-13)
+
+### Features
+
+* rename AGENTS.md to CLAUDE.md; update README cross-ref ([cce5a72](https://github.com/equa/equa-base/commit/cce5a720172c60452e6109d98192769ef3a82009))
+
 ## [1.0.0-beta.3](https://github.com/equa/equa-base/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2026-05-12)
 
 ### Bug Fixes
