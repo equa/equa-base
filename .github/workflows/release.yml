@@ -87,10 +87,11 @@ jobs:
       - name: Push tested image
         if: github.ref == 'refs/heads/beta' || github.ref == 'refs/heads/main'
         run: |
+          retry() { for i in {1..3}; do if "$@"; then return 0; fi; if [ $i -lt 3 ]; then sleep 10; fi; done; return 1; }
           docker tag equa-base:candidate ghcr.io/equa/equa-base:beta
           docker tag equa-base:candidate ghcr.io/equa/equa-base:beta-${{ github.sha }}
-          docker push ghcr.io/equa/equa-base:beta
-          docker push ghcr.io/equa/equa-base:beta-${{ github.sha }}
+          retry docker push ghcr.io/equa/equa-base:beta
+          retry docker push ghcr.io/equa/equa-base:beta-${{ github.sha }}
 
   # ── Semantic release + version tag ───────────────────────────────────────
   release:
@@ -128,6 +129,7 @@ jobs:
 
       - name: Tag image with release version
         run: |
+          retry() { for i in {1..3}; do if "$@"; then return 0; fi; if [ $i -lt 3 ]; then sleep 10; fi; done; return 1; }
           git fetch --tags
           NEW_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]' | head -1)
           PREV_TAG="${{ steps.prev.outputs.tag }}"
@@ -135,10 +137,10 @@ jobs:
             echo "Tagging image as ${NEW_TAG}"
             echo "${{ secrets.GITHUB_TOKEN }}" \
               | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-            docker pull "ghcr.io/equa/equa-base:beta-${{ github.sha }}"
+            retry docker pull "ghcr.io/equa/equa-base:beta-${{ github.sha }}"
             docker tag  "ghcr.io/equa/equa-base:beta-${{ github.sha }}" \
                         "ghcr.io/equa/equa-base:${NEW_TAG}"
-            docker push "ghcr.io/equa/equa-base:${NEW_TAG}"
+            retry docker push "ghcr.io/equa/equa-base:${NEW_TAG}"
           else
             echo "No new release; skipping version tag."
           fi
