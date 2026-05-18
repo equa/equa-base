@@ -1,3 +1,9 @@
+## [1.0.0-beta.5](https://github.com/equa/equa-base/compare/v1.0.0-beta.4...v1.0.0-beta.5) (2026-05-18)
+
+### Bug Fixes
+
+* add retry logic for GHCR push/pull steps in CI ([b1f52a1](https://github.com/equa/equa-base/commit/b1f52a1d938935f5d207f42471f3e6a0b30552a1))
+
 ## [1.0.0-beta.4](https://github.com/equa/equa-base/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2026-05-13)
 
 ### Features
