@@ -1,3 +1,9 @@
+## [1.0.0-beta.6](https://github.com/equa/equa-base/compare/v1.0.0-beta.5...v1.0.0-beta.6) (2026-06-02)
+
+### Features
+
+* add per-user Lisp toolchain (Quicklisp + Parachute) to base image ([6f1b9ae](https://github.com/equa/equa-base/commit/6f1b9ae8e5ec5c23848e0e53ac55f42d88758104))
+
 ## [1.0.0-beta.5](https://github.com/equa/equa-base/compare/v1.0.0-beta.4...v1.0.0-beta.5) (2026-05-18)
 
 ### Bug Fixes
