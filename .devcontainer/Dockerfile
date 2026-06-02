@@ -71,6 +71,23 @@ RUN npm install -g markdownlint-cli2 cspell \
 # System-wide uv install (accessible to CI runners running as root or any user)
 RUN curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
 
+# Lisp toolchain: bootstrap Quicklisp into /home/vscode and pre-fetch Parachute,
+# all as the vscode user (UID 1000) so the per-user ~/quicklisp + ~/.sbclrc layout
+# that downstream tooling assumes is owned by vscode. The dist is pinned to a known
+# version (2026-01-01) via install-dist so a rebuild of this image tag is reproducible;
+# pre-quickloading Parachute makes the library resident and loadable offline at runtime.
+USER vscode
+RUN export HOME=/home/vscode \
+    && curl -fsSL -o /tmp/quicklisp.lisp https://beta.quicklisp.org/quicklisp.lisp \
+    && sbcl --non-interactive \
+         --load /tmp/quicklisp.lisp \
+         --eval '(quicklisp-quickstart:install :path "/home/vscode/quicklisp")' \
+         --eval '(ql-dist:install-dist "http://beta.quicklisp.org/dist/quicklisp/2026-01-01/distinfo.txt" :replace t :prompt nil)' \
+         --eval '(ql-util:without-prompting (ql:add-to-init-file))' \
+    && sbcl --non-interactive --eval '(ql:quickload :parachute)' \
+    && rm -f /tmp/quicklisp.lisp
+USER root
+
 # Copy toolchain smoke-test (build context = repo root)
 COPY tests/toolchain/run-all.sh /tmp/run-all.sh
 

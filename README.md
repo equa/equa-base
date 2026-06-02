@@ -19,6 +19,31 @@ Public base Docker image and shared GitHub Actions composite actions for the Equ
 
 Ubuntu 24.04 + Python 3.12 + Node 24 + uv + Intel oneAPI dpcpp/ifort (APT) + SBCL + Go + az CLI + gh CLI + cmake + clang-format + shellcheck + markdownlint-cli2 + cspell + lychee.
 
+### Lisp toolchain
+
+The image ships a per-user Common Lisp development toolchain owned by the
+`vscode` user (UID 1000):
+
+| Component | Detail |
+|-----------|--------|
+| SBCL | `sbcl` apt package, on `PATH` for every user |
+| Quicklisp | Bootstrapped into `/home/vscode/quicklisp`, dist pinned to `2026-01-01` |
+| `~/.sbclrc` | Holds the `(load "~/quicklisp/setup.lisp")` init form (written by `ql:add-to-init-file`) |
+| Parachute | Test framework, pre-fetched into the resident dist (`parachute-20260101-git`) |
+
+Because Quicklisp and Parachute follow the conventional per-user layout, a
+shell running as `vscode` can `(ql:quickload :parachute)` and run a Parachute
+suite with **no network access and no manual setup** — the dist is resident in
+the image. The dist version and the Parachute release are pinned so a rebuild
+of a given image tag resolves the same libraries.
+
+Consumers that run the image as a different user (e.g. CI running the container
+as `root`) will not find `~/quicklisp/setup.lisp` on their `HOME`; pin the
+container and CI to the `vscode` user to use the resident toolchain.
+
+See the platform docs Base Image page (`equa-platform-docs/docs/ci/image.md`,
+"Lisp toolchain" section) for the full reference.
+
 ## Usage
 
 ### In a CI workflow

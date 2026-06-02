@@ -75,6 +75,26 @@ run_check "ifx compile+run" "$TMPDIR/hello_f90"
 # Common Lisp — sbcl
 run_check "sbcl run" sbcl --noinform --eval '(progn (format t "Hello from SBCL~%") (quit))'
 
+# Common Lisp — Quicklisp + Parachute (per-user toolchain owned by vscode).
+# The image bootstraps Quicklisp into /home/vscode and pre-fetches Parachute,
+# so these checks run as the vscode user (the smoke test itself runs as root).
+# shellcheck disable=SC2016  # $(...) must run inside the inner shell, not expand here
+run_check "quicklisp setup owned by vscode" \
+    bash -c '[ "$(stat -c %U /home/vscode/quicklisp/setup.lisp)" = vscode ]'
+# shellcheck disable=SC2016
+run_check "sbclrc loads quicklisp" \
+    bash -c 'grep -q "quicklisp/setup.lisp" /home/vscode/.sbclrc && [ "$(stat -c %U /home/vscode/.sbclrc)" = vscode ]'
+# Loads Parachute via Quicklisp from the resident (offline) dist, defines a
+# one-assertion test, runs it, and exits zero only on a passing status.
+run_check "parachute suite passes" \
+    runuser -u vscode -- env HOME=/home/vscode \
+    sbcl --non-interactive \
+        --eval '(ql:quickload :parachute :silent t)' \
+        --eval '(defpackage :equa-smoke (:use :cl :parachute))' \
+        --eval '(in-package :equa-smoke)' \
+        --eval '(define-test trivial (true (= 2 (+ 1 1))))' \
+        --eval '(sb-ext:exit :code (if (eql (parachute:status (parachute:test (quote trivial) :report (quote parachute:quiet))) :passed) 0 1))'
+
 # Go
 cat > "$TMPDIR/hello.go" << 'EOF'
 package main
