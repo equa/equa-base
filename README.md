@@ -89,4 +89,4 @@ git commit -m "feat: description"
 git push origin beta
 ```
 
-See [`AGENTS.md`](AGENTS.md) for full contributor conventions.
+See [`CLAUDE.md`](CLAUDE.md) for full contributor conventions.

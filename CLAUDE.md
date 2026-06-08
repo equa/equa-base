@@ -1,4 +1,4 @@
-# AGENTS.md
+# CLAUDE.md
 
 This file is the single source of truth for AI agents and human
 contributors working in `equa-base`.
