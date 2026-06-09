@@ -7,3 +7,4 @@ __pycache__/
 .env
 .doit.db*
 sbom.cdx.json
+.spike-ci-image-layers/

@@ -1,19 +1,24 @@
-# Multi-stage build producing two published tiers from shared layers:
-#   - `lite`  → ghcr.io/equa/equa-base-lite  (no oneAPI, no Lisp)
-#   - `full`  → ghcr.io/equa/equa-base       (lite + oneAPI + Lisp)
-# Tier contents and the lite/full split are recorded in equa-platform-docs
-# change `ci-image-tiering` (design.md + spike-findings.md).
+# Slim four-tier FROM-chain on plain ubuntu:24.04. Each tier is FROM the one
+# above, so layers are shared and one buildx run produces all targets. Tier
+# contents and the job-class mapping are recorded in equa-platform-docs change
+# `ci-image-layers` (design.md + spike-findings.md).
+#
+#   t1-ci   → ghcr.io/equa/equa-base-ci    slim, NO az/oneAPI/Lisp   — checks jobs
+#   t2-lite → ghcr.io/equa/equa-base-lite  + az                      — release jobs
+#   t3-base → ghcr.io/equa/equa-base       + oneAPI/Lisp/Go          — compile jobs
+#   t4-dev  → ghcr.io/equa/equa-base-dev   + dev conveniences        — local dev
 
-# ── lite: non-compile CI toolchain ──────────────────────────────────────────
-FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04 AS lite
+# ── T1 equa-base-ci: slim non-compile CI toolchain ──────────────────────────
+FROM ubuntu:24.04 AS t1-ci
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Base packages: docs/lint/build helpers shared by every job class. SBCL, Go,
-# and oneAPI are NOT here — they live in the `full` stage. build-essential/gcc
-# already ship in the devcontainers base image (kept explicit, no extra cost).
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
+# Base packages: docs/lint/build helpers shared by every job class. az, SBCL,
+# Go, and oneAPI are NOT here — they live in higher tiers. `sudo` is added here
+# (plain ubuntu omits it; the devcontainers base used to provide it) for the
+# vscode user the Lisp tier recreates.
+RUN DEBIAN_FRONTEND=noninteractive apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         bash-completion \
         build-essential \
         ca-certificates \
@@ -29,6 +34,7 @@ RUN apt-get update \
         python3-pip \
         ripgrep \
         shellcheck \
+        sudo \
         wget \
     && mkdir -p /etc/apt/keyrings \
     && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
@@ -41,20 +47,15 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# az CLI + azure-devops extension (release jobs: ADO Artifacts login/publish)
-RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash \
-    && az extension add --name azure-devops --yes \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
 # Node 24 (baked into image; mirrors equa-platform-docs node:24 devcontainer feature)
 RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Docs Node toolchain: markdownlint-cli2 and cspell via npm; lychee via binary release
-# lychee is a Rust binary (no npm package) - install from GitHub releases
+# Docs Node toolchain: markdownlint-cli2 and cspell via npm; lychee via binary release.
+# These are shared, version-stable, not per-repo-pinned — baked. semantic-release is
+# per-repo-pinned (each package-lock.json) and is NOT baked; jobs npm ci it.
 RUN npm install -g markdownlint-cli2 cspell \
     && LYCHEE_VERSION="0.18.0" \
     && curl -sL "https://github.com/lycheeverse/lychee/releases/download/lychee-v${LYCHEE_VERSION}/lychee-x86_64-unknown-linux-gnu.tar.gz" \
@@ -64,13 +65,38 @@ RUN npm install -g markdownlint-cli2 cspell \
 # System-wide uv install (accessible to CI runners running as root or any user)
 RUN curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
 
-# Lite smoke test (non-compiler subset; also asserts the heavy toolchain is absent)
+# T1 smoke test (tools present; az + heavy toolchain asserted absent)
+COPY tests/toolchain/run-all-ci.sh /tmp/run-all-ci.sh
+
+HEALTHCHECK NONE
+
+# ── T2 equa-base-lite: T1 + az ──────────────────────────────────────────────
+FROM t1-ci AS t2-lite
+
+# az CLI + azure-devops extension (release jobs: ADO Artifacts login/publish)
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash \
+    && az extension add --name azure-devops --yes \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# T2 smoke test (az present; compilers absent)
 COPY tests/toolchain/run-all-lite.sh /tmp/run-all-lite.sh
 
 HEALTHCHECK NONE
 
-# ── full: lite + compile/Lisp toolchain ─────────────────────────────────────
-FROM lite AS full
+# ── T3 equa-base: T2 + vscode user + oneAPI/Lisp/Go ─────────────────────────
+FROM t2-lite AS t3-base
+
+# Plain ubuntu:24.04 ships a stock UID-1000 `ubuntu` user; remove it and
+# recreate `vscode` (UID/GID 1000, /home/vscode, /bin/bash, passwordless sudo)
+# byte-for-byte as the devcontainers base did — the per-user Quicklisp/Parachute
+# layout and CI's `runuser -l vscode` drop depend on it. Confirmed by the
+# ci-image-layers Phase 0 spike.
+RUN userdel -r ubuntu 2>/dev/null || true \
+    && groupadd --gid 1000 vscode \
+    && useradd --uid 1000 --gid 1000 -m --shell /bin/bash vscode \
+    && echo 'vscode ALL=(root) NOPASSWD:ALL' > /etc/sudoers.d/vscode \
+    && chmod 0440 /etc/sudoers.d/vscode
 
 # SBCL + Go: build toolchains used only by compile/Lisp jobs.
 RUN apt-get update \
@@ -113,5 +139,26 @@ USER root
 
 # Full toolchain smoke-test (build context = repo root)
 COPY tests/toolchain/run-all.sh /tmp/run-all.sh
+
+HEALTHCHECK NONE
+
+# ── T4 equa-base-dev: T3 + developer conveniences (local dev only) ──────────
+FROM t3-base AS t4-dev
+
+# Conveniences the devcontainers base used to provide; CI tiers never pay for
+# these. Extend as the dev workflow needs.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        less \
+        locales \
+        man-db \
+        nano \
+        procps \
+        unzip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Dev smoke test (developer conveniences present)
+COPY tests/toolchain/run-all-dev.sh /tmp/run-all-dev.sh
 
 HEALTHCHECK NONE
