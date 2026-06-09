@@ -1,3 +1,9 @@
+## [1.0.0-beta.7](https://github.com/equa/equa-base/compare/v1.0.0-beta.6...v1.0.0-beta.7) (2026-06-09)
+
+### Features
+
+* split base image into lite and full tiers ([b1b23e8](https://github.com/equa/equa-base/commit/b1b23e84ef1be09712251307cbdebe9c3122b2b2))
+
 ## [1.0.0-beta.6](https://github.com/equa/equa-base/compare/v1.0.0-beta.5...v1.0.0-beta.6) (2026-06-02)
 
 ### Features
