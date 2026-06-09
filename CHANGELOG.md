@@ -1,3 +1,5 @@
+## [1.0.0-beta.9](https://github.com/equa/equa-base/compare/v1.0.0-beta.8...v1.0.0-beta.9) (2026-06-09)
+
 ## [1.0.0-beta.8](https://github.com/equa/equa-base/compare/v1.0.0-beta.7...v1.0.0-beta.8) (2026-06-09)
 
 ### Features
