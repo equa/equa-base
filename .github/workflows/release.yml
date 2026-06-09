@@ -54,22 +54,53 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Build image (local only — not pushed yet)
+      # Two tiers from one multi-stage Dockerfile. Separate buildx cache scopes
+      # so the full build reuses lite's layers without the two builds clobbering
+      # each other's cache.
+      - name: Build lite image (local only — not pushed yet)
         uses: docker/build-push-action@v7
         with:
           context: .
           file: .devcontainer/Dockerfile
+          target: lite
+          push: false
+          load: true
+          tags: equa-base-lite:candidate
+          cache-from: type=gha,scope=lite
+          cache-to: type=gha,mode=max,scope=lite
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build full image (local only — not pushed yet)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: .devcontainer/Dockerfile
+          target: full
           push: false
           load: true
           tags: equa-base:candidate
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=gha,scope=full
+            type=gha,scope=lite
+          cache-to: type=gha,mode=max,scope=full
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run toolchain smoke tests
+      - name: Run lite toolchain smoke tests
+        run: docker run --rm equa-base-lite:candidate bash /tmp/run-all-lite.sh
+
+      - name: Run full toolchain smoke tests
         run: docker run --rm equa-base:candidate bash /tmp/run-all.sh
 
-      - name: Run Trivy vulnerability scan
+      - name: Run Trivy vulnerability scan (lite)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: equa-base-lite:candidate
+          format: cyclonedx
+          output: sbom-lite.cdx.json
+          exit-code: "0"
+          scan-type: image
+
+      - name: Run Trivy vulnerability scan (full)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: equa-base:candidate
@@ -78,20 +109,24 @@ jobs:
           exit-code: "0"
           scan-type: image
 
-      - name: Upload SBOM artefact
+      - name: Upload SBOM artifacts
         uses: actions/upload-artifact@v7
         with:
           name: sbom-cyclonedx
-          path: sbom.cdx.json
+          path: |
+            sbom.cdx.json
+            sbom-lite.cdx.json
 
-      - name: Push tested image
+      - name: Push tested images
         if: github.ref == 'refs/heads/beta' || github.ref == 'refs/heads/main'
         run: |
           retry() { for i in {1..3}; do if "$@"; then return 0; fi; if [ $i -lt 3 ]; then sleep 10; fi; done; return 1; }
-          docker tag equa-base:candidate ghcr.io/equa/equa-base:beta
-          docker tag equa-base:candidate ghcr.io/equa/equa-base:beta-${{ github.sha }}
-          retry docker push ghcr.io/equa/equa-base:beta
-          retry docker push ghcr.io/equa/equa-base:beta-${{ github.sha }}
+          for repo in equa-base equa-base-lite; do
+            docker tag "${repo}:candidate" "ghcr.io/equa/${repo}:beta"
+            docker tag "${repo}:candidate" "ghcr.io/equa/${repo}:beta-${{ github.sha }}"
+            retry docker push "ghcr.io/equa/${repo}:beta"
+            retry docker push "ghcr.io/equa/${repo}:beta-${{ github.sha }}"
+          done
 
   # ── Semantic release + version tag ───────────────────────────────────────
   release:
@@ -127,20 +162,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Tag image with release version
+      - name: Tag images with release version
         run: |
           retry() { for i in {1..3}; do if "$@"; then return 0; fi; if [ $i -lt 3 ]; then sleep 10; fi; done; return 1; }
           git fetch --tags
           NEW_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]' | head -1)
           PREV_TAG="${{ steps.prev.outputs.tag }}"
           if [ -n "$NEW_TAG" ] && [ "$NEW_TAG" != "$PREV_TAG" ]; then
-            echo "Tagging image as ${NEW_TAG}"
+            echo "Tagging images as ${NEW_TAG}"
             echo "${{ secrets.GITHUB_TOKEN }}" \
               | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-            retry docker pull "ghcr.io/equa/equa-base:beta-${{ github.sha }}"
-            docker tag  "ghcr.io/equa/equa-base:beta-${{ github.sha }}" \
-                        "ghcr.io/equa/equa-base:${NEW_TAG}"
-            retry docker push "ghcr.io/equa/equa-base:${NEW_TAG}"
+            for repo in equa-base equa-base-lite; do
+              retry docker pull "ghcr.io/equa/${repo}:beta-${{ github.sha }}"
+              docker tag  "ghcr.io/equa/${repo}:beta-${{ github.sha }}" \
+                          "ghcr.io/equa/${repo}:${NEW_TAG}"
+              retry docker push "ghcr.io/equa/${repo}:${NEW_TAG}"
+            done
           else
             echo "No new release; skipping version tag."
           fi

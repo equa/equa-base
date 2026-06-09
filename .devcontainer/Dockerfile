@@ -1,8 +1,17 @@
-FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
+# Multi-stage build producing two published tiers from shared layers:
+#   - `lite`  → ghcr.io/equa/equa-base-lite  (no oneAPI, no Lisp)
+#   - `full`  → ghcr.io/equa/equa-base       (lite + oneAPI + Lisp)
+# Tier contents and the lite/full split are recorded in equa-platform-docs
+# change `ci-image-tiering` (design.md + spike-findings.md).
+
+# ── lite: non-compile CI toolchain ──────────────────────────────────────────
+FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04 AS lite
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Base packages: adds SBCL, Go, Python 3.12 dev, and docs tools over equa-superlu base
+# Base packages: docs/lint/build helpers shared by every job class. SBCL, Go,
+# and oneAPI are NOT here — they live in the `full` stage. build-essential/gcc
+# already ship in the devcontainers base image (kept explicit, no extra cost).
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         bash-completion \
@@ -13,14 +22,12 @@ RUN apt-get update \
         curl \
         git \
         gnupg \
-        golang-go \
         lsb-release \
         python3.12 \
         python3.12-dev \
         python3.12-venv \
         python3-pip \
         ripgrep \
-        sbcl \
         shellcheck \
         wget \
     && mkdir -p /etc/apt/keyrings \
@@ -34,23 +41,9 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# az CLI + azure-devops extension
+# az CLI + azure-devops extension (release jobs: ADO Artifacts login/publish)
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash \
     && az extension add --name azure-devops --yes \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Intel oneAPI APT repository + minimal C/Fortran components only (no MKL)
-RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
-      | gpg --dearmor \
-      | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null \
-    && echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" \
-      > /etc/apt/sources.list.d/oneAPI.list \
-    && apt-get update -o Dir::Etc::sourcelist="sources.list.d/oneAPI.list" \
-         -o APT::Get::List-Cleanup="0" \
-    && apt-get install -y --no-install-recommends \
-        intel-oneapi-dpcpp-cpp-compiler \
-        intel-oneapi-compiler-fortran \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -71,6 +64,36 @@ RUN npm install -g markdownlint-cli2 cspell \
 # System-wide uv install (accessible to CI runners running as root or any user)
 RUN curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
 
+# Lite smoke test (non-compiler subset; also asserts the heavy toolchain is absent)
+COPY tests/toolchain/run-all-lite.sh /tmp/run-all-lite.sh
+
+HEALTHCHECK NONE
+
+# ── full: lite + compile/Lisp toolchain ─────────────────────────────────────
+FROM lite AS full
+
+# SBCL + Go: build toolchains used only by compile/Lisp jobs.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        golang-go \
+        sbcl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Intel oneAPI APT repository + minimal C/Fortran components only (no MKL)
+RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+      | gpg --dearmor \
+      | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null \
+    && echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" \
+      > /etc/apt/sources.list.d/oneAPI.list \
+    && apt-get update -o Dir::Etc::sourcelist="sources.list.d/oneAPI.list" \
+         -o APT::Get::List-Cleanup="0" \
+    && apt-get install -y --no-install-recommends \
+        intel-oneapi-dpcpp-cpp-compiler \
+        intel-oneapi-compiler-fortran \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 # Lisp toolchain: bootstrap Quicklisp into /home/vscode and pre-fetch Parachute,
 # all as the vscode user (UID 1000) so the per-user ~/quicklisp + ~/.sbclrc layout
 # that downstream tooling assumes is owned by vscode. The dist is pinned to a known
@@ -88,7 +111,7 @@ RUN export HOME=/home/vscode \
     && rm -f /tmp/quicklisp.lisp
 USER root
 
-# Copy toolchain smoke-test (build context = repo root)
+# Full toolchain smoke-test (build context = repo root)
 COPY tests/toolchain/run-all.sh /tmp/run-all.sh
 
 HEALTHCHECK NONE
