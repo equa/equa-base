@@ -1,3 +1,9 @@
+## [1.0.0-beta.8](https://github.com/equa/equa-base/compare/v1.0.0-beta.7...v1.0.0-beta.8) (2026-06-09)
+
+### Features
+
+* restructure base image into slim four-tier FROM-chain ([cc6092d](https://github.com/equa/equa-base/commit/cc6092d94b49e42b9be193e58f371b05e540f761))
+
 ## [1.0.0-beta.7](https://github.com/equa/equa-base/compare/v1.0.0-beta.6...v1.0.0-beta.7) (2026-06-09)
 
 ### Features
