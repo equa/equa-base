@@ -6,7 +6,7 @@ Public base Docker image and shared GitHub Actions composite actions for the Equ
 
 | Resource | Path | Consumers |
 |----------|------|-----------|
-| Base image | `ghcr.io/equa/equa-base:beta` | `equa-ci` devcontainer; all module CI jobs via `container:` |
+| Base images (4-tier) | `ghcr.io/equa/equa-base-ci` / `-lite` / `equa-base` / `-dev` | checks / release / compile / devcontainer jobs respectively |
 | oneAPI install action | `.github/actions/oneapi-install/` | `equa-superlu` CI; future C/Fortran module repos |
 | Setup-uv action | `.github/actions/setup-uv/` | All repos needing uv |
 | Setup-node action | `.github/actions/setup-node/` | All repos needing Node 24 |
@@ -17,12 +17,24 @@ Public base Docker image and shared GitHub Actions composite actions for the Equ
 
 ## Image contents
 
-Ubuntu 24.04 + Python 3.12 + Node 24 + uv + Intel oneAPI dpcpp/ifort (APT) + SBCL + Go + az CLI + gh CLI + cmake + clang-format + shellcheck + markdownlint-cli2 + cspell + lychee.
+A slim four-tier FROM-chain on plain `ubuntu:24.04`; each tier extends the one
+below, so a CI job pulls the smallest tier it needs:
+
+| Tier | Image | Adds over the tier below | For |
+|------|-------|--------------------------|-----|
+| T1 | `equa-base-ci` | Python 3.12 + Node 24 + uv + cmake + clang-format + shellcheck + gh + markdownlint-cli2 + cspell + lychee | checks jobs |
+| T2 | `equa-base-lite` | az CLI + `azure-devops` extension | release jobs |
+| T3 | `equa-base` | Intel oneAPI dpcpp/ifort + SBCL/Quicklisp/Parachute + Go, and the `vscode` user | compile / Lisp jobs |
+| T4 | `equa-base-dev` | developer conveniences (`less`, `nano`, `procps`, `unzip`, `locales`, `man-db`) | local devcontainer |
+
+Per-repo Node tools (`semantic-release`, `commitlint`) are pinned by each repo's
+`package-lock.json` and installed via `npm ci`, not baked. The shared docs/lint
+tools (`markdownlint-cli2`, `cspell`, `lychee`) are baked into T1.
 
 ### Lisp toolchain
 
-The image ships a per-user Common Lisp development toolchain owned by the
-`vscode` user (UID 1000):
+T3 and T4 ship a per-user Common Lisp development toolchain owned by the
+`vscode` user (UID 1000 — recreated in T3 on the slim base):
 
 | Component | Detail |
 |-----------|--------|
