@@ -25,6 +25,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
         clang-format \
         cmake \
         curl \
+        ninja-build \
         git \
         gnupg \
         lsb-release \
