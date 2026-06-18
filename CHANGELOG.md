@@ -1,3 +1,9 @@
+## [1.0.0-beta.11](https://github.com/equa/equa-base/compare/v1.0.0-beta.10...v1.0.0-beta.11) (2026-06-18)
+
+### Features
+
+* add T5 equa-base-ifrt runtime-only tier ([5def095](https://github.com/equa/equa-base/commit/5def095a848c0c51bf6e12fef070b6e819294f95))
+
 ## [1.0.0-beta.10](https://github.com/equa/equa-base/compare/v1.0.0-beta.9...v1.0.0-beta.10) (2026-06-17)
 
 ### Features
