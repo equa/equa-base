@@ -118,12 +118,29 @@ jobs:
           cache-to: type=gha,mode=max,scope=t4
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Build T5 equa-base-ifrt (local only — not pushed yet)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: .devcontainer/Dockerfile
+          target: t5-ifrt
+          push: false
+          load: true
+          tags: equa-base-ifrt:candidate
+          cache-from: |
+            type=gha,scope=t5
+            type=gha,scope=t2
+            type=gha,scope=t1
+          cache-to: type=gha,mode=max,scope=t5
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run tier smoke tests
         run: |
           docker run --rm equa-base-ci:candidate   bash /tmp/run-all-ci.sh
           docker run --rm equa-base-lite:candidate bash /tmp/run-all-lite.sh
           docker run --rm equa-base:candidate      bash /tmp/run-all.sh
           docker run --rm equa-base-dev:candidate  bash /tmp/run-all-dev.sh
+          docker run --rm equa-base-ifrt:candidate bash /tmp/run-all-ifrt.sh
 
       - name: Run Trivy vulnerability scan (T1 equa-base-ci)
         uses: aquasecurity/trivy-action@v0.36.0
@@ -161,6 +178,15 @@ jobs:
           exit-code: "0"
           scan-type: image
 
+      - name: Run Trivy vulnerability scan (T5 equa-base-ifrt)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: equa-base-ifrt:candidate
+          format: cyclonedx
+          output: sbom-ifrt.cdx.json
+          exit-code: "0"
+          scan-type: image
+
       - name: Upload SBOM artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -170,12 +196,13 @@ jobs:
             sbom-lite.cdx.json
             sbom.cdx.json
             sbom-dev.cdx.json
+            sbom-ifrt.cdx.json
 
       - name: Push tested images
         if: github.ref == 'refs/heads/beta' || github.ref == 'refs/heads/main'
         run: |
           retry() { for i in {1..3}; do if "$@"; then return 0; fi; if [ $i -lt 3 ]; then sleep 10; fi; done; return 1; }
-          for repo in equa-base-ci equa-base-lite equa-base equa-base-dev; do
+          for repo in equa-base-ci equa-base-lite equa-base equa-base-dev equa-base-ifrt; do
             docker tag "${repo}:candidate" "ghcr.io/equa/${repo}:beta"
             docker tag "${repo}:candidate" "ghcr.io/equa/${repo}:beta-${{ github.sha }}"
             retry docker push "ghcr.io/equa/${repo}:beta"
@@ -226,7 +253,7 @@ jobs:
             echo "Tagging images as ${NEW_TAG}"
             echo "${{ secrets.GITHUB_TOKEN }}" \
               | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-            for repo in equa-base-ci equa-base-lite equa-base equa-base-dev; do
+            for repo in equa-base-ci equa-base-lite equa-base equa-base-dev equa-base-ifrt; do
               retry docker pull "ghcr.io/equa/${repo}:beta-${{ github.sha }}"
               docker tag  "ghcr.io/equa/${repo}:beta-${{ github.sha }}" \
                           "ghcr.io/equa/${repo}:${NEW_TAG}"

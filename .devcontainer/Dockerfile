@@ -1,12 +1,13 @@
-# Slim four-tier FROM-chain on plain ubuntu:24.04. Each tier is FROM the one
-# above, so layers are shared and one buildx run produces all targets. Tier
-# contents and the job-class mapping are recorded in equa-platform-docs change
+# Five-tier image set on plain ubuntu:24.04. T1-T4 form a linear FROM-chain;
+# T5 branches from T2. One buildx run produces all targets. Tier contents and
+# the job-class mapping are recorded in equa-platform-docs change
 # `ci-image-layers` (design.md + spike-findings.md).
 #
 #   t1-ci   → ghcr.io/equa/equa-base-ci    slim, NO az/oneAPI/Lisp   — checks jobs
 #   t2-lite → ghcr.io/equa/equa-base-lite  + az                      — release jobs
 #   t3-base → ghcr.io/equa/equa-base       + oneAPI/Lisp/Go          — compile jobs
 #   t4-dev  → ghcr.io/equa/equa-base-dev   + dev conveniences        — local dev
+#   t5-ifrt → ghcr.io/equa/equa-base-ifrt  FROM t2 + Fortran runtime — runtime-vendor jobs
 
 # ── T1 equa-base-ci: slim non-compile CI toolchain ──────────────────────────
 FROM ubuntu:24.04 AS t1-ci
@@ -161,5 +162,34 @@ RUN apt-get update \
 
 # Dev smoke test (developer conveniences present)
 COPY tests/toolchain/run-all-dev.sh /tmp/run-all-dev.sh
+
+HEALTHCHECK NONE
+
+# ── T5 equa-base-ifrt: T2 + Intel Fortran runtime (no compiler, Lisp, or Go) ──
+# Extends T2 (inherits az). Carries the Intel Fortran shared-library runtime
+# (libifcoremt, libifcore, libifport, libimf, libsvml, libintlc) only — no
+# ifx/icx compiler, no SBCL, no Go, no vscode user.
+# intel-oneapi-openmp-2026.0 is a transitive dep that ships ~502 MB of LLVM
+# tools, sanitizer runtimes, SPIR-V bitcode, and OpenMP offload with no
+# DT_NEEDED relationship to the Fortran runtime libs; its files are removed in
+# the same layer to keep /opt/intel under ~510 MB.
+FROM t2-lite AS t5-ifrt
+
+RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+      | gpg --dearmor \
+      | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null \
+    && echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" \
+      > /etc/apt/sources.list.d/oneAPI.list \
+    && apt-get update -o Dir::Etc::sourcelist="sources.list.d/oneAPI.list" \
+         -o APT::Get::List-Cleanup="0" \
+    && apt-get install -y --no-install-recommends \
+        intel-oneapi-compiler-fortran-runtime \
+    && dpkg -L intel-oneapi-openmp-2026.0 \
+         | while IFS= read -r f; do [ -f "$f" ] && rm -f "$f"; done \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# T5 smoke test
+COPY tests/toolchain/run-all-ifrt.sh /tmp/run-all-ifrt.sh
 
 HEALTHCHECK NONE

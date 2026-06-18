@@ -6,7 +6,7 @@ Public base Docker image and shared GitHub Actions composite actions for the Equ
 
 | Resource | Path | Consumers |
 |----------|------|-----------|
-| Base images (4-tier) | `ghcr.io/equa/equa-base-ci` / `-lite` / `equa-base` / `-dev` | checks / release / compile / devcontainer jobs respectively |
+| Base images (5-tier) | `ghcr.io/equa/equa-base-ci` / `-lite` / `equa-base` / `-dev` / `equa-base-ifrt` | checks / release / compile / devcontainer / runtime-vendor jobs respectively |
 | oneAPI install action | `.github/actions/oneapi-install/` | `equa-superlu` CI; future C/Fortran module repos |
 | Setup-uv action | `.github/actions/setup-uv/` | All repos needing uv |
 | Setup-node action | `.github/actions/setup-node/` | All repos needing Node 24 |
@@ -26,6 +26,7 @@ below, so a CI job pulls the smallest tier it needs:
 | T2 | `equa-base-lite` | az CLI + `azure-devops` extension | release jobs |
 | T3 | `equa-base` | Intel oneAPI dpcpp/ifort + SBCL/Quicklisp/Parachute + Go, and the `vscode` user | compile / Lisp jobs |
 | T4 | `equa-base-dev` | developer conveniences (`less`, `nano`, `procps`, `unzip`, `locales`, `man-db`) | local devcontainer |
+| T5 | `equa-base-ifrt` | Intel Fortran runtime (libifcoremt/libifport/libimf); no compiler, Lisp, or Go; inherits az from T2 | runtime-vendor jobs (auditwheel etc.) |
 
 Per-repo Node tools (`semantic-release`, `commitlint`) are pinned by each repo's
 `package-lock.json` and installed via `npm ci`, not baked. The shared docs/lint
