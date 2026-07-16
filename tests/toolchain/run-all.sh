@@ -29,7 +29,6 @@ export LD_LIBRARY_PATH="/opt/intel/oneapi/compiler/latest/lib:${LD_LIBRARY_PATH:
 echo "=== Tool version checks ==="
 run_check "ifx --version"             ifx --version
 run_check "icx --version"             icx --version
-run_check "sbcl --version"            sbcl --version
 run_check "go version"                go version
 run_check "python3 --version"         python3 --version
 run_check "node --version"            node --version
@@ -72,8 +71,29 @@ EOF
 ifx -o "$TMPDIR/hello_f90" "$TMPDIR/hello.f90"
 run_check "ifx compile+run" "$TMPDIR/hello_f90"
 
-# Common Lisp — sbcl
+# Common Lisp — sbcl. Exact version (not a prefix): must match the Windows
+# sbcl-windows-x64 artifact, and a .debian-suffixed apt build must fail.
+expected_sbcl="SBCL 2.6.5"
+actual_sbcl="$(sbcl --version)"
+if [ "$actual_sbcl" = "$expected_sbcl" ]; then
+    pass "sbcl --version is exactly $expected_sbcl"
+else
+    fail "sbcl --version is exactly $expected_sbcl" "got: $actual_sbcl"
+fi
+
 run_check "sbcl run" sbcl --noinform --eval '(progn (format t "Hello from SBCL~%") (quit))'
+
+# Compressed executable image round-trip: the Linux lisp build leg saves images
+# with save-lisp-and-die :executable t :compression t, which requires
+# :sb-core-compression (zstd). Save a tiny executable, run it, assert exit 0.
+run_check "save-lisp-and-die :compression t round-trips" \
+    bash -c '
+        set -e
+        img="$1/compressed-image"
+        sbcl --non-interactive \
+            --eval "(sb-ext:save-lisp-and-die \"$img\" :executable t :compression t :toplevel (lambda () (sb-ext:exit :code 0)))"
+        "$img"
+    ' _ "$TMPDIR"
 
 # Common Lisp — Quicklisp + Parachute (per-user toolchain owned by vscode).
 # The image bootstraps Quicklisp into /home/vscode and pre-fetches Parachute,

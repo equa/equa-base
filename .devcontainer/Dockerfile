@@ -9,6 +9,36 @@
 #   t4-dev  → ghcr.io/equa/equa-base-dev   + dev conveniences        — local dev
 #   t5-ifrt → ghcr.io/equa/equa-base-ifrt  FROM t2 + Fortran runtime — runtime-vendor jobs
 
+# ── sbcl-builder: compile SBCL 2.6.5 from source ────────────────────────────
+# Apt on noble is frozen at SBCL 2.2.9; the sbcl.org Linux binary omits
+# :sb-core-compression, which the Linux lisp build leg's save-lisp-and-die
+# :compression t requires. So build 2.6.5 from the public release tag with
+# --fancy (includes sb-core-compression). Isolated in its own stage so the
+# ~3-6 min compile and its build-only deps stay out of the shipping image and
+# are reused via buildx cache on unrelated T3 edits. See equa-platform-docs
+# change bump-linux-sbcl-2-6-5 (design D1/D2).
+#
+# SBCL_BUILDING_RELEASE_FROM=HEAD + NO_GIT_HASH_IN_VERSION=1 force the version
+# string to a clean "2.6.5": a --depth 1 --branch clone has no origin/master, so
+# SBCL's generate-version.sh cannot compute merge-base and would otherwise stamp
+# the dev form "2.6.5.HEAD.N-<hash>", failing the exact-version smoke test.
+FROM ubuntu:24.04 AS sbcl-builder
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        sbcl \
+        build-essential \
+        zlib1g-dev \
+        libzstd-dev \
+        git \
+        ca-certificates \
+    && git clone --depth 1 --branch sbcl-2.6.5 https://github.com/sbcl/sbcl /tmp/sbcl \
+    && cd /tmp/sbcl \
+    && SBCL_BUILDING_RELEASE_FROM=HEAD NO_GIT_HASH_IN_VERSION=1 sh make.sh --fancy \
+    && sh install.sh --prefix=/opt/sbcl
+
 # ── T1 equa-base-ci: slim non-compile CI toolchain ──────────────────────────
 FROM ubuntu:24.04 AS t1-ci
 
@@ -100,11 +130,16 @@ RUN userdel -r ubuntu 2>/dev/null || true \
     && echo 'vscode ALL=(root) NOPASSWD:ALL' > /etc/sudoers.d/vscode \
     && chmod 0440 /etc/sudoers.d/vscode
 
-# SBCL + Go: build toolchains used only by compile/Lisp jobs.
+# SBCL + Go: build toolchains used only by compile/Lisp jobs. SBCL is the
+# source-built 2.6.5 from the sbcl-builder stage (not apt, which is 2.2.9);
+# only its runtime libs are apt-installed here. Must precede the Quicklisp
+# bootstrap so those fasls compile under 2.6.5 (design D5).
+COPY --from=sbcl-builder /opt/sbcl/ /usr/local/
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         golang-go \
-        sbcl \
+        libzstd1 \
+        zlib1g \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

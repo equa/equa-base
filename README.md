@@ -39,7 +39,7 @@ T3 and T4 ship a per-user Common Lisp development toolchain owned by the
 
 | Component | Detail |
 |-----------|--------|
-| SBCL | `sbcl` apt package, on `PATH` for every user |
+| SBCL | 2.6.5 built from source (public `github.com/sbcl/sbcl` tag, `--fancy` so core compression is available), installed under `/usr/local`, on `PATH` for every user |
 | Quicklisp | Bootstrapped into `/home/vscode/quicklisp`, dist pinned to `2026-01-01` |
 | `~/.sbclrc` | Holds the `(load "~/quicklisp/setup.lisp")` init form (written by `ql:add-to-init-file`) |
 | Parachute | Test framework, pre-fetched into the resident dist (`parachute-20260101-git`) |
