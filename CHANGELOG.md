@@ -1,3 +1,13 @@
+## [1.0.0-beta.12](https://github.com/equa/equa-base/compare/v1.0.0-beta.11...v1.0.0-beta.12) (2026-07-16)
+
+### Features
+
+* build SBCL 2.6.5 from source in T3 for Linux/Windows alignment ([120a733](https://github.com/equa/equa-base/commit/120a7333d53dcd7f3b6e9e095eade219ab115ecf))
+
+### Bug Fixes
+
+* resolve oneAPI openmp package by pattern in T5 size purge ([3e8f968](https://github.com/equa/equa-base/commit/3e8f968da05068398cfcd0bfabb67719a951ad83))
+
 ## [1.0.0-beta.11](https://github.com/equa/equa-base/compare/v1.0.0-beta.10...v1.0.0-beta.11) (2026-06-18)
 
 ### Features
