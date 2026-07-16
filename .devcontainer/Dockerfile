@@ -204,10 +204,13 @@ HEALTHCHECK NONE
 # Extends T2 (inherits az). Carries the Intel Fortran shared-library runtime
 # (libifcoremt, libifcore, libifport, libimf, libsvml, libintlc) only — no
 # ifx/icx compiler, no SBCL, no Go, no vscode user.
-# intel-oneapi-openmp-2026.0 is a transitive dep that ships ~502 MB of LLVM
-# tools, sanitizer runtimes, SPIR-V bitcode, and OpenMP offload with no
-# DT_NEEDED relationship to the Fortran runtime libs; its files are removed in
-# the same layer to keep /opt/intel under ~510 MB.
+# The versioned intel-oneapi-openmp-<ver> package is a transitive dep that
+# ships ~502 MB of LLVM tools, sanitizer runtimes, SPIR-V bitcode, and OpenMP
+# offload with no DT_NEEDED relationship to the Fortran runtime libs; its files
+# are removed in the same layer to keep /opt/intel under ~510 MB. The package
+# name is resolved by pattern (not a hardcoded minor version) so an upstream
+# oneAPI bump — e.g. 2026.0 to 2026.1 — does not break the purge. The
+# [0-9] class excludes intel-oneapi-openmp-common-<ver> (small config).
 FROM t2-lite AS t5-ifrt
 
 RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
@@ -219,8 +222,9 @@ RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRO
          -o APT::Get::List-Cleanup="0" \
     && apt-get install -y --no-install-recommends \
         intel-oneapi-compiler-fortran-runtime \
-    && dpkg -L intel-oneapi-openmp-2026.0 \
-         | while IFS= read -r f; do [ -f "$f" ] && rm -f "$f"; done \
+    && for pkg in $(dpkg-query -W -f='${Package}\n' 'intel-oneapi-openmp-[0-9]*' 2>/dev/null); do \
+           dpkg -L "$pkg" | while IFS= read -r f; do [ -f "$f" ] && rm -f "$f"; done; \
+       done \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
