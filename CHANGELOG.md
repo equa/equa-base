@@ -1,3 +1,9 @@
+## [1.0.0-beta.13](https://github.com/equa/equa-base/compare/v1.0.0-beta.12...v1.0.0-beta.13) (2026-09-26)
+
+### Features
+
+* add openssh-client and rsync to base image ([997f6bb](https://github.com/equa/equa-base/commit/997f6bb1ad96c6f2e618d57693b12abe7b50d2c8))
+
 ## [1.0.0-beta.12](https://github.com/equa/equa-base/compare/v1.0.0-beta.11...v1.0.0-beta.12) (2026-07-16)
 
 ### Features
