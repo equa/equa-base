@@ -27,6 +27,8 @@ echo "=== Developer conveniences present ==="
 run_check "less"   less --version
 run_check "nano"   nano --version
 run_check "ps"     ps --version
+run_check "ssh"    ssh -V
+run_check "rsync"  rsync --version
 run_check "unzip"  unzip -v
 run_check "locale" locale
 

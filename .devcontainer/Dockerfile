@@ -190,7 +190,9 @@ RUN apt-get update \
         locales \
         man-db \
         nano \
+        openssh-client \
         procps \
+        rsync \
         unzip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
