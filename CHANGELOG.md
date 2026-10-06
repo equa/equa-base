@@ -1,3 +1,9 @@
+## [1.0.0-beta.14](https://github.com/equa/equa-base/compare/v1.0.0-beta.13...v1.0.0-beta.14) (2026-10-06)
+
+### Features
+
+* **dev:** add headless Chromium to equa-base-dev ([0b9e960](https://github.com/equa/equa-base/commit/0b9e96056a695faba125e7c1328a16b28c07656e))
+
 ## [1.0.0-beta.13](https://github.com/equa/equa-base/compare/v1.0.0-beta.12...v1.0.0-beta.13) (2026-09-26)
 
 ### Features
