@@ -25,7 +25,7 @@ below, so a CI job pulls the smallest tier it needs:
 | T1 | `equa-base-ci` | Python 3.12 + Node 24 + uv + cmake + clang-format + shellcheck + gh + markdownlint-cli2 + cspell + lychee | checks jobs |
 | T2 | `equa-base-lite` | az CLI + `azure-devops` extension | release jobs |
 | T3 | `equa-base` | Intel oneAPI dpcpp/ifort + SBCL/Quicklisp/Parachute + Go, and the `vscode` user | compile / Lisp jobs |
-| T4 | `equa-base-dev` | developer conveniences (`less`, `nano`, `procps`, `unzip`, `locales`, `man-db`, `openssh-client`, `rsync`) | local devcontainer |
+| T4 | `equa-base-dev` | developer conveniences (`less`, `nano`, `procps`, `unzip`, `locales`, `man-db`, `openssh-client`, `rsync`), headless Chromium with its libraries (Playwright, `PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright`) | local devcontainer |
 | T5 | `equa-base-ifrt` | Intel Fortran runtime (libifcoremt/libifport/libimf); no compiler, Lisp, or Go; inherits az from T2 | runtime-vendor jobs (auditwheel etc.) |
 
 Per-repo Node tools (`semantic-release`, `commitlint`) are pinned by each repo's

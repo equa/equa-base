@@ -197,6 +197,15 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Headless Chromium and its libraries, for UI screenshots and browser checks.
+# World-writable, so a different Playwright version (e.g. its MCP server)
+# adds its own browser build beside this one without sudo.
+ARG PLAYWRIGHT_VERSION=1.63.0
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
+RUN npx -y playwright@${PLAYWRIGHT_VERSION} install --with-deps chromium \
+    && chmod -R a+rwX /opt/ms-playwright \
+    && rm -rf /root/.npm /var/lib/apt/lists/*
+
 # Dev smoke test (developer conveniences present)
 COPY tests/toolchain/run-all-dev.sh /tmp/run-all-dev.sh
 
