@@ -1,3 +1,13 @@
+## [1.0.0-beta.15](https://github.com/equa/equa-base/compare/v1.0.0-beta.14...v1.0.0-beta.15) (2026-11-17)
+
+### Features
+
+* **devcontainer:** add openssh-client to the T1 ci tier ([d6b405b](https://github.com/equa/equa-base/commit/d6b405be78dda62f00e45d862a1b88c5c3b8e2fc))
+
+### Bug Fixes
+
+* **devcontainer:** stop the T5 OpenMP purge loop failing on directories ([38877ff](https://github.com/equa/equa-base/commit/38877ffe063b8d88f01e7a598f524fd0735b1827))
+
 ## [1.0.0-beta.14](https://github.com/equa/equa-base/compare/v1.0.0-beta.13...v1.0.0-beta.14) (2026-10-06)
 
 ### Features
