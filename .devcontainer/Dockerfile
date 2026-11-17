@@ -235,7 +235,7 @@ RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRO
     && apt-get install -y --no-install-recommends \
         intel-oneapi-compiler-fortran-runtime \
     && for pkg in $(dpkg-query -W -f='${Package}\n' 'intel-oneapi-openmp-[0-9]*' 2>/dev/null); do \
-           dpkg -L "$pkg" | while IFS= read -r f; do [ -f "$f" ] && rm -f "$f"; done; \
+           dpkg -L "$pkg" | while IFS= read -r f; do if [ -f "$f" ]; then rm -f "$f"; fi; done; \
        done \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
