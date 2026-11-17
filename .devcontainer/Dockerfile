@@ -47,7 +47,8 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # Base packages: docs/lint/build helpers shared by every job class. az, SBCL,
 # Go, and oneAPI are NOT here — they live in higher tiers. `sudo` is added here
 # (plain ubuntu omits it; the devcontainers base used to provide it) for the
-# vscode user the Lisp tier recreates.
+# vscode user the Lisp tier recreates. `openssh-client`: release jobs push
+# over SSH with a deploy key.
 RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         bash-completion \
@@ -58,6 +59,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
         curl \
         ninja-build \
         git \
+        openssh-client \
         gnupg \
         lsb-release \
         python3.12 \
@@ -190,7 +192,6 @@ RUN apt-get update \
         locales \
         man-db \
         nano \
-        openssh-client \
         procps \
         rsync \
         unzip \

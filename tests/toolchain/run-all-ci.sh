@@ -40,6 +40,7 @@ run_check "node --version"              node --version
 run_check "uv --version"                uv --version
 run_check "gh --version"                gh --version
 run_check "git --version"               git --version
+run_check "ssh -V"                      ssh -V
 run_check "clang-format --version"      clang-format --version
 run_check "cmake --version"             cmake --version
 run_check "ninja --version"             ninja --version
