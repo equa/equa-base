@@ -10,7 +10,6 @@ Public base Docker image and shared GitHub Actions composite actions for the Equ
 | oneAPI install action | `.github/actions/oneapi-install/` | `equa-superlu` CI; future C/Fortran module repos |
 | Setup-uv action | `.github/actions/setup-uv/` | All repos needing uv |
 | Setup-node action | `.github/actions/setup-node/` | All repos needing Node 24 |
-| Publish-wiki action | `.github/actions/publish-wiki/` | Module repos publishing a subdirectory of the Azure DevOps wiki |
 | Semantic-release action | `.github/actions/semantic-release/` | All repos using semantic-release |
 | Renovate preset | `renovate-presets/default.json` | All Equa repos via `github>equa/equa-base//renovate-presets/default` |
 | oneAPI offline installer scripts | `scripts/install_linux.sh`, `scripts/install_windows.bat` | `oneapi-install` composite action |
