@@ -1,3 +1,9 @@
+## [1.0.0-beta.16](https://github.com/equa/equa-base/compare/v1.0.0-beta.15...v1.0.0-beta.16) (2026-11-26)
+
+### Features
+
+* **devcontainer:** add the equa-base-web tier with headless Chromium ([17ada71](https://github.com/equa/equa-base/commit/17ada719dc1d6d5694c57435ebcd2004905f0a2a))
+
 ## [1.0.0-beta.15](https://github.com/equa/equa-base/compare/v1.0.0-beta.14...v1.0.0-beta.15) (2026-11-17)
 
 ### Features
