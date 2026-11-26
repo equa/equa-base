@@ -6,16 +6,18 @@ contributors working in `equa-base`.
 ## Repository purpose
 
 `equa-base` owns the shared base Docker images and GitHub Actions composite
-actions for the Equa platform. The image is a slim **four-tier FROM-chain** on
-plain `ubuntu:24.04`; each tier extends the one below, so a CI job pulls the
-smallest tier it needs:
+actions for the Equa platform. The images are slim tiers on plain
+`ubuntu:24.04`: T1-T4 form a FROM-chain, T5 extends T2 and T6 extends T1, so a
+CI job pulls the smallest tier it needs:
 
 | Tier | Image | For |
 |------|-------|-----|
 | T1 | `equa-base-ci` | checks jobs (lint, ruff, version dry-run) — no az/oneAPI/Lisp |
 | T2 | `equa-base-lite` | release jobs (adds az CLI) |
 | T3 | `equa-base` | compile / Lisp jobs (adds oneAPI, SBCL/Quicklisp/Parachute, Go, the `vscode` user) |
-| T4 | `equa-base-dev` | the developer container (adds dev conveniences) |
+| T4 | `equa-base-dev` | the developer container (adds dev conveniences, full Chromium) |
+| T5 | `equa-base-ifrt` | runtime-vendor jobs (T2 + Intel Fortran runtime) |
+| T6 | `equa-base-web` | checks jobs of web repos (T1 + Playwright's headless Chromium shell) |
 
 Every Linux CI job and the developer container consume a tier published here.
 See [`README.md`](README.md) for the full resource inventory.
@@ -43,16 +45,17 @@ use `feat:`, `fix:`, or `docs:`. Pure maintenance commits (`chore:`, `ci:`,
 
 - Trunk-based development. `beta` is the pre-release channel.
 - Releases are produced by `semantic-release` on each push to `beta`.
-- A successful release builds all four tier targets and pushes
-  `equa-base-ci` / `equa-base-lite` / `equa-base` / `equa-base-dev` in lockstep
-  (`beta`, `beta-<sha>`, and the semver tag).
+- A successful release builds all six tier targets and pushes
+  `equa-base-ci` / `equa-base-lite` / `equa-base` / `equa-base-dev` /
+  `equa-base-ifrt` / `equa-base-web` in lockstep (`beta`, `beta-<sha>`, and
+  the semver tag).
 
 ## Key files
 
 | File | Purpose |
 |------|---------|
-| `.devcontainer/Dockerfile` | Four-tier multi-stage image definition — source of truth for all toolchain versions |
-| `tests/toolchain/run-all*.sh` | Per-tier smoke tests: `run-all-ci.sh` (T1), `run-all-lite.sh` (T2), `run-all.sh` (T3), `run-all-dev.sh` (T4), run on every CI push |
+| `.devcontainer/Dockerfile` | Six-tier multi-stage image definition — source of truth for all toolchain versions |
+| `tests/toolchain/run-all*.sh` | Per-tier smoke tests: `run-all-ci.sh` (T1), `run-all-lite.sh` (T2), `run-all.sh` (T3), `run-all-dev.sh` (T4), `run-all-ifrt.sh` (T5), `run-all-web.sh` (T6), run on every CI push |
 | `scripts/install_linux.sh` | Intel oneAPI offline installer (Linux) |
 | `scripts/install_windows.bat` | Intel oneAPI offline installer (Windows) |
 | `.github/actions/*/action.yml` | Shared composite actions |
@@ -63,9 +66,11 @@ use `feat:`, `fix:`, or `docs:`. Pure maintenance commits (`chore:`, `ci:`,
 
 1. Edit `.devcontainer/Dockerfile` — add the install step to the **lowest tier
    that needs the tool** (checks tools → T1; az → T2; compiler/Lisp/Go → T3;
-   dev-only conveniences → T4). Higher tiers inherit it via the FROM-chain.
+   dev-only conveniences → T4; browser-test tools → T6). Higher tiers inherit
+   it via the FROM-chain.
 2. Add a version/hello-world check to that tier's smoke test
-   (`run-all-ci.sh` / `run-all-lite.sh` / `run-all.sh` / `run-all-dev.sh`).
+   (`run-all-ci.sh` / `run-all-lite.sh` / `run-all.sh` / `run-all-dev.sh` /
+   `run-all-ifrt.sh` / `run-all-web.sh`).
 3. Commit with `feat: add <tool> to base image`.
 4. Push to `beta`; CI builds and smoke-tests the image automatically.
 

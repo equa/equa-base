@@ -4,8 +4,19 @@
   "timezone": "Europe/Stockholm",
   "schedule": ["before 5am on Monday"],
   "enabledManagers": [
+    "custom.regex",
     "dockerfile",
     "github-actions",
     "npm"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "PLAYWRIGHT_VERSION (T4 and T6 Chromium) follows npm @playwright/test",
+      "managerFilePatterns": ["/^\\.devcontainer/Dockerfile$/"],
+      "matchStrings": ["ARG PLAYWRIGHT_VERSION=(?<currentValue>\\S+)"],
+      "depNameTemplate": "@playwright/test",
+      "datasourceTemplate": "npm"
+    }
   ]
 }

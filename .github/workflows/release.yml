@@ -54,7 +54,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      # Four tiers from one multi-stage Dockerfile. Each build targets a stage;
+      # Six tiers from one multi-stage Dockerfile. Each build targets a stage;
       # separate buildx cache scopes let higher tiers reuse lower layers without
       # the builds clobbering each other's cache.
       - name: Build T1 equa-base-ci (local only — not pushed yet)
@@ -134,6 +134,21 @@ jobs:
           cache-to: type=gha,mode=max,scope=t5
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Build T6 equa-base-web (local only — not pushed yet)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: .devcontainer/Dockerfile
+          target: t6-web
+          push: false
+          load: true
+          tags: equa-base-web:candidate
+          cache-from: |
+            type=gha,scope=t6
+            type=gha,scope=t1
+          cache-to: type=gha,mode=max,scope=t6
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run tier smoke tests
         run: |
           docker run --rm equa-base-ci:candidate   bash /tmp/run-all-ci.sh
@@ -141,6 +156,7 @@ jobs:
           docker run --rm equa-base:candidate      bash /tmp/run-all.sh
           docker run --rm equa-base-dev:candidate  bash /tmp/run-all-dev.sh
           docker run --rm equa-base-ifrt:candidate bash /tmp/run-all-ifrt.sh
+          docker run --rm equa-base-web:candidate  bash /tmp/run-all-web.sh
 
       - name: Run Trivy vulnerability scan (T1 equa-base-ci)
         uses: aquasecurity/trivy-action@v0.36.0
@@ -187,6 +203,15 @@ jobs:
           exit-code: "0"
           scan-type: image
 
+      - name: Run Trivy vulnerability scan (T6 equa-base-web)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: equa-base-web:candidate
+          format: cyclonedx
+          output: sbom-web.cdx.json
+          exit-code: "0"
+          scan-type: image
+
       - name: Upload SBOM artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -197,12 +222,13 @@ jobs:
             sbom.cdx.json
             sbom-dev.cdx.json
             sbom-ifrt.cdx.json
+            sbom-web.cdx.json
 
       - name: Push tested images
         if: github.ref == 'refs/heads/beta' || github.ref == 'refs/heads/main'
         run: |
           retry() { for i in {1..3}; do if "$@"; then return 0; fi; if [ $i -lt 3 ]; then sleep 10; fi; done; return 1; }
-          for repo in equa-base-ci equa-base-lite equa-base equa-base-dev equa-base-ifrt; do
+          for repo in equa-base-ci equa-base-lite equa-base equa-base-dev equa-base-ifrt equa-base-web; do
             docker tag "${repo}:candidate" "ghcr.io/equa/${repo}:beta"
             docker tag "${repo}:candidate" "ghcr.io/equa/${repo}:beta-${{ github.sha }}"
             retry docker push "ghcr.io/equa/${repo}:beta"
@@ -253,7 +279,7 @@ jobs:
             echo "Tagging images as ${NEW_TAG}"
             echo "${{ secrets.GITHUB_TOKEN }}" \
               | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-            for repo in equa-base-ci equa-base-lite equa-base equa-base-dev equa-base-ifrt; do
+            for repo in equa-base-ci equa-base-lite equa-base equa-base-dev equa-base-ifrt equa-base-web; do
               retry docker pull "ghcr.io/equa/${repo}:beta-${{ github.sha }}"
               docker tag  "ghcr.io/equa/${repo}:beta-${{ github.sha }}" \
                           "ghcr.io/equa/${repo}:${NEW_TAG}"

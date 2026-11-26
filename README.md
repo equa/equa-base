@@ -6,7 +6,7 @@ Public base Docker image and shared GitHub Actions composite actions for the Equ
 
 | Resource | Path | Consumers |
 |----------|------|-----------|
-| Base images (5-tier) | `ghcr.io/equa/equa-base-ci` / `-lite` / `equa-base` / `-dev` / `equa-base-ifrt` | checks / release / compile / devcontainer / runtime-vendor jobs respectively |
+| Base images (6-tier) | `ghcr.io/equa/equa-base-ci` / `-lite` / `equa-base` / `-dev` / `equa-base-ifrt` / `equa-base-web` | checks / release / compile / devcontainer / runtime-vendor / web checks jobs respectively |
 | oneAPI install action | `.github/actions/oneapi-install/` | `equa-superlu` CI; future C/Fortran module repos |
 | Setup-uv action | `.github/actions/setup-uv/` | All repos needing uv |
 | Setup-node action | `.github/actions/setup-node/` | All repos needing Node 24 |
@@ -16,20 +16,24 @@ Public base Docker image and shared GitHub Actions composite actions for the Equ
 
 ## Image contents
 
-A slim four-tier FROM-chain on plain `ubuntu:24.04`; each tier extends the one
-below, so a CI job pulls the smallest tier it needs:
+Slim tiers on plain `ubuntu:24.04`; T1-T4 form a FROM-chain, T5 extends T2
+and T6 extends T1, so a CI job pulls the smallest tier it needs:
 
 | Tier | Image | Adds over the tier below | For |
 |------|-------|--------------------------|-----|
 | T1 | `equa-base-ci` | Python 3.12 + Node 24 + uv + cmake + clang-format + shellcheck + gh + openssh-client + markdownlint-cli2 + cspell + lychee | checks jobs |
 | T2 | `equa-base-lite` | az CLI + `azure-devops` extension | release jobs |
 | T3 | `equa-base` | Intel oneAPI dpcpp/ifort + SBCL/Quicklisp/Parachute + Go, and the `vscode` user | compile / Lisp jobs |
-| T4 | `equa-base-dev` | developer conveniences (`less`, `nano`, `procps`, `unzip`, `locales`, `man-db`, `rsync`), headless Chromium with its libraries (Playwright, `PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright`) | local devcontainer |
+| T4 | `equa-base-dev` | developer conveniences (`less`, `nano`, `procps`, `unzip`, `locales`, `man-db`, `rsync`), full Chromium with its libraries (Playwright, `PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright`) | local devcontainer |
 | T5 | `equa-base-ifrt` | Intel Fortran runtime (libifcoremt/libifport/libimf); no compiler, Lisp, or Go; inherits az from T2 | runtime-vendor jobs (auditwheel etc.) |
+| T6 | `equa-base-web` | Playwright's headless Chromium shell with its libraries (`PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright`) on T1 | checks jobs of web repos (equa.ci `test_ui`) |
 
 Per-repo Node tools (`semantic-release`, `commitlint`) are pinned by each repo's
 `package-lock.json` and installed via `npm ci`, not baked. The shared docs/lint
 tools (`markdownlint-cli2`, `cspell`, `lychee`) are baked into T1.
+
+T4 and T6 share one `PLAYWRIGHT_VERSION` (Dockerfile `ARG`); Renovate raises
+it with npm `@playwright/test`, and a beta release ships the new browser.
 
 ### Lisp toolchain
 
