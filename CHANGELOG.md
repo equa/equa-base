@@ -1,3 +1,9 @@
+## [1.0.0-beta.17](https://github.com/equa/equa-base/compare/v1.0.0-beta.16...v1.0.0-beta.17) (2026-11-26)
+
+### Bug Fixes
+
+* **ci:** tag release images even when semantic-release fails late ([98f3888](https://github.com/equa/equa-base/commit/98f388856b80faffc90f7b071ba711c6e79c7df5))
+
 ## [1.0.0-beta.16](https://github.com/equa/equa-base/compare/v1.0.0-beta.15...v1.0.0-beta.16) (2026-11-26)
 
 ### Features
