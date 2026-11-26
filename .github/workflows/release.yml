@@ -269,7 +269,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # semantic-release can fail after it pushed the tag (beta.16: notes push
+      # rejected); the NEW_TAG != PREV_TAG check still skips a run that made no tag.
       - name: Tag images with release version
+        if: ${{ !cancelled() && steps.prev.outcome == 'success' }}
         run: |
           retry() { for i in {1..3}; do if "$@"; then return 0; fi; if [ $i -lt 3 ]; then sleep 10; fi; done; return 1; }
           git fetch --tags
