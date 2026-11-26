@@ -1,6 +1,6 @@
-# Five-tier image set on plain ubuntu:24.04. T1-T4 form a linear FROM-chain;
-# T5 branches from T2. One buildx run produces all targets. Tier contents and
-# the job-class mapping are recorded in equa-platform-docs change
+# Six-tier image set on plain ubuntu:24.04. T1-T4 form a linear FROM-chain;
+# T5 branches from T2, T6 from T1. One buildx run produces all targets. Tier
+# contents and the job-class mapping are recorded in equa-platform-docs change
 # `ci-image-layers` (design.md + spike-findings.md).
 #
 #   t1-ci   → ghcr.io/equa/equa-base-ci    slim, NO az/oneAPI/Lisp   — checks jobs
@@ -8,6 +8,11 @@
 #   t3-base → ghcr.io/equa/equa-base       + oneAPI/Lisp/Go          — compile jobs
 #   t4-dev  → ghcr.io/equa/equa-base-dev   + dev conveniences        — local dev
 #   t5-ifrt → ghcr.io/equa/equa-base-ifrt  FROM t2 + Fortran runtime — runtime-vendor jobs
+#   t6-web  → ghcr.io/equa/equa-base-web   FROM t1 + headless Chromium — web checks jobs
+
+# One Playwright version for T6's headless shell and T4's full Chromium;
+# Renovate moves it with npm @playwright/test (renovate.json).
+ARG PLAYWRIGHT_VERSION=1.63.0
 
 # ── sbcl-builder: compile SBCL 2.6.5 from source ────────────────────────────
 # Apt on noble is frozen at SBCL 2.2.9; the sbcl.org Linux binary omits
@@ -201,7 +206,7 @@ RUN apt-get update \
 # Headless Chromium and its libraries, for UI screenshots and browser checks.
 # World-writable, so a different Playwright version (e.g. its MCP server)
 # adds its own browser build beside this one without sudo.
-ARG PLAYWRIGHT_VERSION=1.63.0
+ARG PLAYWRIGHT_VERSION
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
 RUN npx -y playwright@${PLAYWRIGHT_VERSION} install --with-deps chromium \
     && chmod -R a+rwX /opt/ms-playwright \
@@ -242,5 +247,23 @@ RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRO
 
 # T5 smoke test
 COPY tests/toolchain/run-all-ifrt.sh /tmp/run-all-ifrt.sh
+
+HEALTHCHECK NONE
+
+# ── T6 equa-base-web: T1 + Playwright's headless Chromium shell ─────────────
+# Its own tier so checks jobs without browser tests keep a slim T1.
+FROM t1-ci AS t6-web
+
+# Baked so a web repo's Playwright tests (equa.ci `test_ui`) never apt-install
+# Chromium's libraries per run from a slow Ubuntu mirror. World-writable, so a
+# different Playwright version adds its own browser build beside this one.
+ARG PLAYWRIGHT_VERSION
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
+RUN npx -y playwright@${PLAYWRIGHT_VERSION} install --with-deps --only-shell chromium \
+    && chmod -R a+rwX /opt/ms-playwright \
+    && rm -rf /root/.npm /var/lib/apt/lists/*
+
+# T6 smoke test (headless shell starts; T1 tools inherited)
+COPY tests/toolchain/run-all-web.sh /tmp/run-all-web.sh
 
 HEALTHCHECK NONE
