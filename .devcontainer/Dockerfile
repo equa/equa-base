@@ -9,6 +9,9 @@
 #   t4-dev  → ghcr.io/equa/equa-base-dev   + dev conveniences        — local dev
 #   t5-ifrt → ghcr.io/equa/equa-base-ifrt  FROM t2 + Fortran runtime — runtime-vendor jobs
 
+# One Playwright version for T1's headless shell and T4's full Chromium.
+ARG PLAYWRIGHT_VERSION=1.63.0
+
 # ── sbcl-builder: compile SBCL 2.6.5 from source ────────────────────────────
 # Apt on noble is frozen at SBCL 2.2.9; the sbcl.org Linux binary omits
 # :sb-core-compression, which the Linux lisp build leg's save-lisp-and-die
@@ -98,6 +101,16 @@ RUN npm install -g markdownlint-cli2 cspell \
 
 # System-wide uv install (accessible to CI runners running as root or any user)
 RUN curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
+
+# Headless Chromium shell and its libraries, so a checks job's Playwright tests
+# (equa.ci `test_ui`) never apt-install them per run from a slow Ubuntu mirror.
+# World-writable, so a different Playwright version (e.g. its MCP server)
+# adds its own browser build beside this one without sudo.
+ARG PLAYWRIGHT_VERSION
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
+RUN npx -y playwright@${PLAYWRIGHT_VERSION} install --with-deps --only-shell chromium \
+    && chmod -R a+rwX /opt/ms-playwright \
+    && rm -rf /root/.npm /var/lib/apt/lists/*
 
 # T1 smoke test (tools present; az + heavy toolchain asserted absent)
 COPY tests/toolchain/run-all-ci.sh /tmp/run-all-ci.sh
@@ -198,11 +211,9 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Headless Chromium and its libraries, for UI screenshots and browser checks.
-# World-writable, so a different Playwright version (e.g. its MCP server)
-# adds its own browser build beside this one without sudo.
-ARG PLAYWRIGHT_VERSION=1.63.0
-ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
+# Full Chromium beside T1's headless shell, for UI screenshots and browser
+# checks.
+ARG PLAYWRIGHT_VERSION
 RUN npx -y playwright@${PLAYWRIGHT_VERSION} install --with-deps chromium \
     && chmod -R a+rwX /opt/ms-playwright \
     && rm -rf /root/.npm /var/lib/apt/lists/*

@@ -34,6 +34,13 @@ absent_check() {
     fi
 }
 
+# Runs the baked shell, so a missing Chromium library fails here, not in a
+# consumer's Playwright tests.
+headless_shell_version() {
+    local bins=("$PLAYWRIGHT_BROWSERS_PATH"/chromium_headless_shell-*/chrome-*/chrome-headless-shell)
+    "${bins[0]}" --version
+}
+
 echo "=== Tool version checks ==="
 run_check "python3 --version"           python3 --version
 run_check "node --version"              node --version
@@ -49,6 +56,7 @@ run_check "shellcheck --version"        shellcheck --version
 run_check "markdownlint-cli2 --version" markdownlint-cli2 --version
 run_check "cspell --version"            cspell --version
 run_check "lychee --version"            lychee --version
+run_check "chromium headless shell"     headless_shell_version
 
 echo ""
 echo "=== az and heavy toolchain must be absent ==="
